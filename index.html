@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TravelHearts | Authenticity Verification</title>
+    <style>
+        :root { --primary: #e91e63; --bg: #f8f9fa; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .card { background: white; width: 90%; max-width: 400px; padding: 30px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; }
+        .logo { font-size: 28px; font-weight: 800; color: var(--primary); margin-bottom: 5px; }
+        .tagline { color: #6c757d; font-size: 12px; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px; }
+        .status-box { padding: 15px; border-radius: 12px; margin-bottom: 20px; font-weight: bold; }
+        .verified { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; font-size: 15px; }
+        .label { color: #888; }
+        .value { font-weight: 600; color: #333; }
+        .footer { margin-top: 25px; font-size: 11px; color: #adb5bd; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="logo">TravelHearts ❤️</div>
+        <div class="tagline">Quality You Can Trust</div>
+        <div id="loader">Checking digital certificate...</div>
+        <div id="result" style="display:none;">
+            <div id="status-msg" class="status-box"></div>
+            <div id="details"></div>
+            <div class="footer">© 2026 TravelHearts India. All rights reserved.</div>
+        </div>
+    </div>
+
+    <script>
+        // PASTE YOUR GOOGLE SHEET CSV LINK BELOW
+        const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTvb_TdMZO86xO4sK50E9bMZmWFUXvrnURZAzB8xFCz2f6s3tdkDWnpNzIew1YKh6r99vlkVbvOECxZ/pub?output=csv";
+
+        async function verify() {
+            const params = new URLSearchParams(window.location.search);
+            const pid = params.get('id');
+            const resultDiv = document.getElementById('result');
+            const loader = document.getElementById('loader');
+
+            if (!pid) {
+                loader.innerHTML = "⚠️ Please scan a valid product QR code.";
+                return;
+            }
+
+            try {
+                const response = await fetch(SHEET_URL);
+                const data = await response.text();
+                const rows = data.split("\n").map(row => row.split(","));
+                
+                // Find row by ID (Column A)
+                const product = rows.find(r => r[0].trim().toLowerCase() === pid.toLowerCase());
+
+                loader.style.display = 'none';
+                resultDiv.style.display = 'block';
+
+                if (product) {
+                    document.getElementById('status-msg').className = "status-box verified";
+                    document.getElementById('status-msg').innerHTML = "✓ GENUINE TRAVELHEARTS PRODUCT";
+                    document.getElementById('details').innerHTML = `
+                        <div class="info-row"><span class="label">Serial ID</span><span class="value">${product[0]}</span></div>
+                        <div class="info-row"><span class="label">Product</span><span class="value">${product[1]}</span></div>
+                        <div class="info-row"><span class="label">Color</span><span class="value">${product[2]}</span></div>
+                        <div class="info-row"><span class="label">Size</span><span class="value">${product[3]}</span></div>
+                        <div class="info-row"><span class="label">Origin</span><span class="value">${product[4]}</span></div>
+                    `;
+                } else {
+                    document.getElementById('status-msg').className = "status-box error";
+                    document.getElementById('status-msg').innerHTML = "✖ PRODUCT NOT FOUND";
+                    document.getElementById('details').innerHTML = "<p>This serial number is not in our registry. Please contact support.</p>";
+                }
+            } catch (err) {
+                loader.innerHTML = "System Busy. Please try again later.";
+            }
+        }
+        verify();
+    </script>
+</body>
+</html>
